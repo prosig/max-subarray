@@ -1,0 +1,18 @@
+Application notes:
+
+* Purpose: To find the sub-matrix with maximum sum given a square matrix
+* Algorithm: Based on the O(n^3) Kandane's algorithm described here: http://www.algorithmist.com/index.php/UVa_108
+* Implementation is sequential and is based on comments from here: http://stackoverflow.com/questions/2643908/getting-the-submatrix-with-maximum-sum
+
+Software:
+
+- Source code is in max-sub-array-vla.c
+- Three input files are provided: test_input_0[0-2].in
+- A Makefile is provided for compilation and testing
+
+How to run:
+
+- Type 'make' to compile 
+- Type 'make run_test' to test
+- Change the Makefile to test with different inputs
+
