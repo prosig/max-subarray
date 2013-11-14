@@ -9,32 +9,32 @@
 long 
 get_usecs(void)
 {
-    struct timeval t;
-    gettimeofday(&t,NULL);
-    return t.tv_sec*1000000+t.tv_usec;
+	struct timeval t;
+	gettimeofday(&t,NULL);
+	return t.tv_sec*1000000+t.tv_usec;
 }
 
 void 
 usage(const char* app_name) 
 {
-    printf("Argument error! Usage: %s <input_file> \n", app_name);
-    exit(0);
+	printf("Argument error! Usage: %s <input_file> [num_threads (default: 48)]\n", app_name);
+	exit(0);
 }
 
 void 
 clear(
-	int* a, 
-	int len) 
+int* a, 
+int len) 
 {
-    for (int index=0; index<len; index++) {
-        *(a+index) = 0;
-    }
+	for (int index=0; index<len; index++) {
+		*(a+index) = 0;
+	}
 }
 
 int** 
 alloc_matrix(
-	int n, 
-	int m) 
+int n, 
+int m) 
 {
 	int **matrix;
 
@@ -54,8 +54,8 @@ alloc_matrix(
 
 void 
 free_matrix(
-	int** matrix, 
-	int n) 
+int** matrix, 
+int n) 
 {
 	if(!matrix) {
 		printf("[ERROR] could not free memory for matrix - already freed\n");
@@ -81,52 +81,52 @@ get_mat_dim(FILE* input_file)
 
 void 
 read_matrix(
-	int **mat, 
-	int m, 
-	int n, 
-	FILE *input_file) 
+int **mat, 
+int m, 
+int n, 
+FILE *input_file) 
 { 
 	int element = 0;
 
 	for(int i=0; i<m; i++) {
-        for(int j=0; j<n; j++) {
-            if (j != (n-1)) { 
-                fscanf(input_file, "%d\t", &element);
+		for(int j=0; j<n; j++) {
+			if (j != (n-1)) { 
+				fscanf(input_file, "%d\t", &element);
 			} else { 
 				fscanf(input_file, "%d\n",&element);
 			}
 			mat[i][j] = element;
-        }
-    }
+		}
+	}
 }
 
 void 
 print_matrix(
-	int **matrix, 
-	int m, 
-	int n) 
+int **matrix, 
+int m, 
+int n) 
 {
-    for(int i=0; i<m; i++) {
-        for(int j=0; j<n; j++) {
-            printf("%d\t", matrix[i][j]);
-        }
-        printf("\n");
-    }
+	for(int i=0; i<m; i++) {
+		for(int j=0; j<n; j++) {
+			printf("%d\t", matrix[i][j]);
+		}
+		printf("\n");
+	}
 }
 
 void 
 precomp_matrix(
-	int **mat, 
-	int **ps, 
-	int dim) 
+int **mat, 
+int **ps, 
+int dim) 
 {
 	/* precompute vertical prefix sum */
 	for(int j=0; j<dim; j++) {
-        ps[0][j] = mat[0][j];
-        for (int i=1; i<dim; i++) {
-            ps[i][j] = ps[i-1][j] + mat[i][j];
-        }
-    }
+		ps[0][j] = mat[0][j];
+		for (int i=1; i<dim; i++) {
+			ps[i][j] = ps[i-1][j] + mat[i][j];
+		}
+	}
 }
 
 typedef struct tr
@@ -151,12 +151,11 @@ typedef struct ta
 } thread_args;
 
 
-thread_ret maxArray_pthread(int** ps, int** mat, int dim);
+thread_ret maxArray_pthread(int** ps, int** mat, int dim, int num_threads);
 void* maxArray_pthread_func(void* tdata);
 
-thread_ret maxArray_pthread(int** ps, int** mat, int dim)
+thread_ret maxArray_pthread(int** ps, int** mat, int dim, int num_threads)
 {
-	const int num_threads = 16;
 	int iterations = dim * (dim + 1) / 2;
 	
 	int iter_i[dim];
@@ -178,7 +177,7 @@ thread_ret maxArray_pthread(int** ps, int** mat, int dim)
 		thread_args[n].mat0 = mat[0][0];
 
 #ifdef _PRINT_INFO
-    printf("[INFO] Create thread number %d with start %d and end %d\n", thread_args[n].threadId, thread_args[n].start, thread_args[n].end);
+		printf("[INFO] Create thread number %d with start %d and end %d\n", thread_args[n].threadId, thread_args[n].start, thread_args[n].end);
 #endif		
 		int error = pthread_create (&threads[n], 0, maxArray_pthread_func, (void *)&thread_args[n]);
 		if(error)
@@ -189,8 +188,8 @@ thread_ret maxArray_pthread(int** ps, int** mat, int dim)
 	}
 	
 	thread_ret ret;
-    ret.max_sum = mat[0][0];
-    ret.top = 0;
+	ret.max_sum = mat[0][0];
+	ret.top = 0;
 	ret.left = 0;
 	ret.bottom = 0; 
 	ret.right = 0; 
@@ -204,7 +203,7 @@ thread_ret maxArray_pthread(int** ps, int** mat, int dim)
 		}
 
 #ifdef _PRINT_INFO
-    printf("[INFO] Thread number %d returned max_sum=%d,top=%d,left=%d,bottom=%d,right=%d\n", i, thread_args[i].result.max_sum, thread_args[i].result.top, thread_args[i].result.left, thread_args[i].result.bottom, thread_args[i].result.right);
+		printf("[INFO] Thread number %d returned max_sum=%d,top=%d,left=%d,bottom=%d,right=%d\n", i, thread_args[i].result.max_sum, thread_args[i].result.top, thread_args[i].result.left, thread_args[i].result.bottom, thread_args[i].result.right);
 #endif	
 
 		if(thread_args[i].result.max_sum > ret.max_sum) ret = thread_args[i].result;
@@ -223,17 +222,17 @@ void* maxArray_pthread_func(void* tdata)
 	int* iter_i = targs.iter_i;
 	int** ps = targs.ps;
 	
-    int max_sum = targs.mat0;
-    int top = 0, left = 0, bottom = 0, right = 0; 
+	int max_sum = targs.mat0;
+	int top = 0, left = 0, bottom = 0, right = 0; 
 
 #ifdef _PRINT_INFO
-    printf("[INFO] Thread number %d started with start %d and end %d\n", tid, start, end);
+	printf("[INFO] Thread number %d started with start %d and end %d\n", tid, start, end);
 #endif
 
-    //Auxilliary variables 
-    int sum[dim];
-    int pos[dim];
-    int local_max;
+	//Auxilliary variables 
+	int sum[dim];
+	int pos[dim];
+	int local_max;
 	
 	int i = 0;
 	for(;i<dim&&iter_i[i]<=start;i++);
@@ -250,44 +249,42 @@ void* maxArray_pthread_func(void* tdata)
 		
 		int k = i + n - iter_i[i];
 
+		// Kandane over all columns with the i..k rows
+		clear(sum, dim);
+		clear(pos, dim);
+		local_max = 0;
 
+		// We keep track of the position of the max value over each Kandane's execution
+		// Notice that we do not keep track of the max value, but only its position
 
-            // Kandane over all columns with the i..k rows
-            clear(sum, dim);
-            clear(pos, dim);
-            local_max = 0;
+		sum[0] = ps[k][0] - (i==0 ? 0 : ps[i-1][0]);
 
-            // We keep track of the position of the max value over each Kandane's execution
-            // Notice that we do not keep track of the max value, but only its position
+		for (int j=1; j<dim; j++) {
+			if (sum[j-1] > 0){
+				sum[j] = sum[j-1] + ps[k][j] - (i==0 ? 0 : ps[i-1][j]);
+				pos[j] = pos[j-1];
+			} 
+			else {
+				sum[j] = ps[k][j] - (i==0 ? 0 : ps[i-1][j]);
+				pos[j] = j;
+			}
+			if (sum[j] > sum[local_max]){
+				local_max = j;
+			}
+		} //Kandane ends here
 
-            sum[0] = ps[k][0] - (i==0 ? 0 : ps[i-1][0]);
+		if (sum[local_max] > max_sum) {
+			// sum[local_max] is the new max value
+			// the corresponding submatrix goes from rows i..k.
+			// and from columns pos[local_max]..local_max
 
-            for (int j=1; j<dim; j++) {
-                if (sum[j-1] > 0){
-                    sum[j] = sum[j-1] + ps[k][j] - (i==0 ? 0 : ps[i-1][j]);
-                    pos[j] = pos[j-1];
-                } 
-                else {
-                    sum[j] = ps[k][j] - (i==0 ? 0 : ps[i-1][j]);
-                    pos[j] = j;
-                }
-                if (sum[j] > sum[local_max]){
-                    local_max = j;
-                }
-            } //Kandane ends here
-
-            if (sum[local_max] > max_sum) {
-                // sum[local_max] is the new max value
-                // the corresponding submatrix goes from rows i..k.
-                // and from columns pos[local_max]..local_max
-
-                max_sum = sum[local_max];
-                top = i;
-                left = pos[local_max];
-                bottom = k;
-                right = local_max;
-            }
-        }
+			max_sum = sum[local_max];
+			top = i;
+			left = pos[local_max];
+			bottom = k;
+			right = local_max;
+		}
+	}
 
 	thread_ret ret;
 	ret.max_sum = max_sum;
@@ -307,19 +304,20 @@ main(int argc, char* argv[])
 	int dim = 0;
 	int **mat, **ps, **outmat;
 	FILE* input_file;
-    
-	if(argc != 2) {
-        usage(argv[0]);
-    }
+	
+	
+	if(argc < 2) {
+		usage(argv[0]);
+	}
 
-    /* open files */
-    input_file = fopen(argv[1], "r");
-    if(input_file == NULL) {
-        usage(argv[0]);
-    }
+	/* open files */
+	input_file = fopen(argv[1], "r");
+	if(input_file == NULL) {
+		usage(argv[0]);
+	}
 
-    /* read matrix dimension */
-    dim = get_mat_dim(input_file);  
+	/* read matrix dimension */
+	dim = get_mat_dim(input_file);  
 	
 	/* init matrices */
 	mat = alloc_matrix(dim, dim); 
@@ -329,61 +327,58 @@ main(int argc, char* argv[])
 	read_matrix(mat, dim, dim, input_file); 
 
 #ifdef _PRINT_INFO
-    /* Print the matrix */
-    printf("[INFO] Input matrix [%d]\n", dim);
+	/* Print the matrix */
+	printf("[INFO] Input matrix [%d]\n", dim);
 	print_matrix(mat, dim, dim); 
 #endif
 
 	precomp_matrix(mat, ps, dim);
 
 #ifdef _PRINT_INFO
-    /* Print the matrix */
-    printf("[INFO] Vertical prefix sum matrix [%d]\n", dim);
+	/* Print the matrix */
+	printf("[INFO] Vertical prefix sum matrix [%d]\n", dim);
 	print_matrix(ps, dim, dim); 
 #endif
 
 	long alg_start, alg_end;
 
-    alg_start = get_usecs();
-	thread_ret result = maxArray_pthread(ps, mat, dim);
-    alg_end = get_usecs();
+	alg_start = get_usecs();
+	thread_ret result = maxArray_pthread(ps, mat, dim, argc > 2 ? atoi(argv[2]) : 48);
+	alg_end = get_usecs();
 	
 	/* FIXME - Question: Do we need to compute the output matrix? */
 	/* Compose the output matrix */
 
 	int outmat_row_dim = result.bottom - result.top + 1;
-    int outmat_col_dim = result.right - result.left + 1;
-    outmat = alloc_matrix(outmat_row_dim, outmat_col_dim);
+	int outmat_col_dim = result.right - result.left + 1;
+	outmat = alloc_matrix(outmat_row_dim, outmat_col_dim);
 
-    for(int i=result.top, k=0; i<=result.bottom; i++, k++) {
-        for(int j=result.left, l=0; j<=result.right; j++, l++) {
-            outmat[k][l] = mat[i][j];
-        }
-    }
+	for(int i=result.top, k=0; i<=result.bottom; i++, k++) {
+		for(int j=result.left, l=0; j<=result.right; j++, l++) {
+			outmat[k][l] = mat[i][j];
+		}
+	}
 	
-    /* print output matrix */
-    printf("Sub-matrix [%dX%d] with max sum = %d, left = %d, top = %d,"
-			" right = %d, bottom = %d\n", 
-			outmat_row_dim, outmat_col_dim, result.max_sum, result.left, result.top, result.right, result.bottom);
+	/* print output matrix */
+	printf("Sub-matrix [%dX%d] with max sum = %d, left = %d, top = %d,"
+	" right = %d, bottom = %d\n", 
+	outmat_row_dim, outmat_col_dim, result.max_sum, result.left, result.top, result.right, result.bottom);
 
 #ifdef _PRINT_INFO
 	printf("[INFO] output matrix: \n");
 	print_matrix(outmat, outmat_row_dim, outmat_col_dim); 
 #endif
 
-    /* print stats */
-    printf("%s,%f sec\n", "CHECK_NOT_PERFORMED", 
-			((double)(alg_end-alg_start))/1000000);
+	/* print stats */
+	printf("%s,%f sec\n", "CHECK_NOT_PERFORMED", 
+	((double)(alg_end-alg_start))/1000000);
 	
-	printf("[DEBUG] freeing outmat\n");
 	free_matrix(outmat, outmat_row_dim); 
 	
-    /* release resources */
-    fclose(input_file);
-	printf("[DEBUG] freeing mat\n");
+	/* release resources */
+	fclose(input_file);
 	free_matrix(mat, dim); 
-	printf("[DEBUG] freeing ps\n");
 	free_matrix(ps, dim); 
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }
