@@ -5,8 +5,11 @@
 #include <omp.h>
 
 //#define _PRINT_INFO 
+#define		NUM_ROUNDS		20
+#define 	MAX_THREADS		48
 
 static int thread_nr = 8;
+static double runtime = 0;
 
 long 
 get_usecs(void)
@@ -37,11 +40,13 @@ clear(
 	/* precompute vertical prefix sum */
 
 #if OMP
-	/* FIXME - does not make sense to parallelize??? */
-//	#pragma omp parallel for \
-//		if(len > 512) \
-//		schedule(static) \
+	/* TODO - does not make sense to parallelize??? */
+/*
+	#pragma omp parallel for \
+		if(len > 512) \
+		schedule(static) \
 //		num_threads(4)
+*/
 #endif
 #if 0
     for (int index=0; index<len; index+=4) {
@@ -165,8 +170,8 @@ precomp_matrix(
 #if OMP
 	#pragma omp parallel for \
 		if(dim > 8) \
-		schedule(static)  
-//		num_threads(thread_nr)
+		schedule(static) \
+		num_threads(thread_nr)
 #endif
 	for(int j=0; j<dim; j++) {
         ps[0][j] = mat[0][j];
@@ -213,14 +218,19 @@ max_sub_arr(
 		#pragma omp parallel for \
 			schedule(static) \
 			private(sum, pos, local_max) \
-			shared(max_sum, top, bottom, left, right)
-//			num_threads(8)
+			shared(max_sum, top, bottom, left, right) \
+			num_threads(thread_nr)
 #endif
 		for(int k=i; k<dim; k++) {
             /* Kandane over all columns with the i..k rows */
             clear(sum, dim);
             clear(pos, dim);
             local_max = 0;
+
+#if STOP_TIME
+//	double start, time;
+//	start = omp_get_wtime();
+#endif /* STOP_TIME */
 
 			/* we keep track of the position of the max value over each 
 			 * Kandane's execution 
@@ -241,6 +251,11 @@ max_sub_arr(
                 }
             } /* Kandane ends here */
 	
+#if STOP_TIME
+//	time = omp_get_wtime() - start;
+//	printf("[TIME] - kandane(): time needed %f sec\n", time); 
+#endif /* STOP_TIME */
+
 			/* use flush because it is faster than critical - this way
 			 * the critical section will be accessed less often */
 			#pragma omp flush (max_sum)
@@ -250,7 +265,6 @@ max_sub_arr(
                 	/* sum[local_max] is the new max value
                 	 * the corresponding submatrix goes from rows i..k.
                 	 * and from columns pos[local_max]..local_max */
-//printf("TEEEST hallo welt, wie geht es dir heute??? mir gehts sseeeeeehr guuuut!!! und was ist mit dir thread nur irgendwas anderes??? möchtest du mich unterbrechen???[THREAD=%d]\n", omp_get_thread_num());
                 	max_sum = sum[local_max];
                 	top = i;
                 	left = pos[local_max];
@@ -261,63 +275,51 @@ max_sub_arr(
         }
     }
 
-    /* FIXME - Question: Do we need to compute the output matrix? */
-	/* Compose the output matrix */
-
 	int outmat_row_dim = bottom - top + 1;
     int outmat_col_dim = right - left + 1;
-//	int xoutmat[outmat_row_dim][outmat_col_dim];
 	outmat = alloc_matrix(outmat_row_dim, outmat_col_dim);
 
-#if 0
-int k=0;
-	#pragma omp parallel for \
-		schedule(static) \
-		firstprivate(k)
-//		num_threads(thread_nr)
-    for(int i=top/*, k=0*/; i<=bottom; i++/*, k++*/) {
-        for(int j=left, l=0; j<=right; j++, l++) {
-            outmat[k][l] = mat[i][j];
-        }
-		k++;
-    }
-int l=0;
+#if STOP_TIME
+//	double start, time;
+//	start = omp_get_wtime();
+#endif /* STOP_TIME */
+
+    /* TODO - Question: Do we need to compute the output matrix? */
+	/* Compose the output matrix */
+	/* TODO - Question: how to parallelize??? does it make sense to parallelize
+	 * copying operations??? */
+
+	/* calculate output matrix */
     for(int i=top, k=0; i<=bottom; i++, k++) {
-		#pragma omp parallel for \
-			schedule(static) \
-			firstprivate(l)
-//			num_threads(thread_nr)
-        for(int j=left/*, l=0*/; j<=right; j++/*, l++*/) {
-            outmat[k][l] = mat[i][j];
-			l++;
-        }
+		int j=left;
+
+		memcpy((void*) outmat[k], (void*)(&mat[i][j]), 
+				sizeof(**mat)*(right-left+1));
 	}
-#endif
-	/* TODO - Question: how to parallelize??? maybe only a small nr of threads? */
-    for(int i=top, k=0; i<=bottom; i++, k++) {
-        for(int j=left, l=0; j<=right; j++, l++) {
-            outmat[k][l] = mat[i][j];
-        }
-	}
+
+#if STOP_TIME
+//	time = omp_get_wtime() - start;
+//	printf("[TIME] - outmat(): time needed %f sec\n", time); 
+#endif /* STOP_TIME */
 
     alg_end = get_usecs();
+	runtime = (double)(alg_end-alg_start)/1000000;
 
+#if RESULT
     /* print output matrix */
-    printf("Sub-matrix [%dX%d] with max sum = %d, left = %d, top = %d,"
-			" right = %d, bottom = %d\n", 
-			outmat_row_dim, outmat_col_dim, max_sum, left, top, right, bottom);
+    printf("[RESULT] Threads=%d sub-matrix [%dX%d] in %f sec\n", 
+			thread_nr, outmat_row_dim, outmat_col_dim, runtime);
+	printf(" -> max sum=%d, left=%d, top=%d right=%d, bottom=%d\n", 
+			 max_sum, left, top, right, bottom);
+#endif
 
 #ifdef _PRINT_INFO
 	printf("[INFO] output matrix: \n");
 	print_matrix(outmat, outmat_row_dim, outmat_col_dim); 
 #endif
 
-    /* print stats */
-    printf("%s,%f sec\n", "CHECK_NOT_PERFORMED", 
-			((double)(alg_end-alg_start))/1000000);
-	
-	printf("[DEBUG] freeing outmat\n");
-//	free_matrix(outmat, outmat_row_dim); 
+//	printf("[DEBUG] freeing outmat\n");
+	free_matrix(outmat, outmat_row_dim); 
 }
 
 int 
@@ -353,13 +355,32 @@ main(int argc, char* argv[])
 	print_matrix(mat, dim, dim); 
 #endif
 
-	max_sub_arr(mat, ps, outmat, dim);
+	printf("Evaluation:\n");
+	printf("===========\n");
+	
+	/* evaluate the program using multiple number of threads/cores */
+	for(int i=1; i<=MAX_THREADS; i++) {
+		thread_nr = i;
+		double avg_time = 0;
+
+		/* compute an average value of the time needed to run the program */
+		for(int j=0; j<NUM_ROUNDS; j++) {
+			max_sub_arr(mat, ps, outmat, dim);
+			/* runtime of the algorithm is modified by the algorithm itself */
+			avg_time += runtime; 
+		}
+
+		avg_time /= NUM_ROUNDS;
+    
+		/* print stats */
+    	printf("[STAT] Threads=%d: runtime=%f sec\n\n", thread_nr, avg_time);
+	}
 
     /* release resources */
     fclose(input_file);
-	printf("[DEBUG] freeing mat\n");
+//	printf("[DEBUG] freeing mat\n");
 	free_matrix(mat, dim); 
-	printf("[DEBUG] freeing ps\n");
+//	printf("[DEBUG] freeing ps\n");
 	free_matrix(ps, dim); 
 
     return EXIT_SUCCESS;
