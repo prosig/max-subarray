@@ -341,9 +341,10 @@ main(int argc, char* argv[])
 #endif
 
 	long alg_start, alg_end;
-
+	thread_ret result;
+	
 	alg_start = get_usecs();
-	thread_ret result = maxArray_pthread(ps, mat, dim, argc > 2 ? atoi(argv[2]) : 48);
+	result = maxArray_pthread(ps, mat, dim, argc > 2 ? atoi(argv[2]) : 48);
 	alg_end = get_usecs();
 	
 	/* FIXME - Question: Do we need to compute the output matrix? */
