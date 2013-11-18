@@ -3,7 +3,11 @@
 #include <sys/time.h>
 #include <string.h>
 
-//#define _PRINT_INFO 
+//#define _PRINT_INFO
+//#define 	OPTIMIZE		1
+#define     NUM_ROUNDS      20
+
+static double runtime = 0;
 
 long 
 get_usecs(void)
@@ -25,11 +29,18 @@ clear(
 	int* a, 
 	int len) 
 {
+#ifdef OPTIMIZE
+	memset((void*)a, 0,len);
+#else
     for (int index=0; index<len; index++) {
         *(a+index) = 0;
     }
+#endif
 }
 
+/**
+ * allocate matrix of size NxM on the heap
+ */
 int** 
 alloc_matrix(
 	int n, 
@@ -51,6 +62,9 @@ alloc_matrix(
 	return matrix;
 }
 
+/**
+ * free matrix 
+ */
 void 
 free_matrix(
 	int** matrix, 
@@ -68,6 +82,9 @@ free_matrix(
 	free(matrix);
 }
 
+/**
+ * return the matrix (NxN matrix) dimension as stated in the input file
+ */
 int 
 get_mat_dim(FILE* input_file) 
 {
@@ -78,6 +95,9 @@ get_mat_dim(FILE* input_file)
 	return dim; 
 }
 
+/**
+ * read the matrix from input file
+ */
 void 
 read_matrix(
 	int **mat, 
@@ -99,6 +119,9 @@ read_matrix(
     }
 }
 
+/**
+ * print matrix 
+ */ 
 void 
 print_matrix(
 	int **matrix, 
@@ -113,6 +136,9 @@ print_matrix(
     }
 }
 
+/**
+ * precompiles matrix' vertical prefix sum
+ */
 void 
 precomp_matrix(
 	int **mat, 
@@ -203,28 +229,35 @@ max_sub_arr(
     outmat = alloc_matrix(outmat_row_dim, outmat_col_dim);
 
     for(int i=top, k=0; i<=bottom; i++, k++) {
+#ifdef OPTIMIZE
+		int j=left;
+
+		memcpy((void*) outmat[k], (void*)(&mat[i][j]),
+				sizeof(**mat)*(right-left+1));
+#else
         for(int j=left, l=0; j<=right; j++, l++) {
             outmat[k][l] = mat[i][j];
         }
+#endif
     }
 
     alg_end = get_usecs();
-
-    /* print output matrix */
-    printf("Sub-matrix [%dX%d] with max sum = %d, left = %d, top = %d,"
-			" right = %d, bottom = %d\n", 
-			outmat_row_dim, outmat_col_dim, max_sum, left, top, right, bottom);
+	runtime = (double)(alg_end-alg_start)/1000000;
 
 #ifdef _PRINT_INFO
+	/* prints the usual result */
+	printf("[RESULT] Sub-matrix [%dX%d] in %f sec\n",
+			outmat_row_dim, outmat_col_dim, runtime);
+	printf(" -> max sum=%d, left=%d, top=%d right=%d, bottom=%d\n",
+			max_sum, left, top, right, bottom);
+#endif
+
+#ifdef _PRINT_INFO
+    /* print output matrix */
 	printf("[INFO] output matrix: \n");
 	print_matrix(outmat, outmat_row_dim, outmat_col_dim); 
 #endif
 
-    /* print stats */
-    printf("%s,%f sec\n", "CHECK_NOT_PERFORMED", 
-			((double)(alg_end-alg_start))/1000000);
-	
-	printf("[DEBUG] freeing outmat\n");
 	free_matrix(outmat, outmat_row_dim); 
 }
 
@@ -232,7 +265,7 @@ int
 main(int argc, char* argv[]) 
 {
 	int dim = 0;
-	int **mat, **ps, **outmat;
+	int **mat=NULL, **ps=NULL, **outmat=NULL;
 	FILE* input_file;
     
 	if(argc != 2) {
@@ -261,13 +294,25 @@ main(int argc, char* argv[])
 	print_matrix(mat, dim, dim); 
 #endif
 
-	max_sub_arr(mat, ps, outmat, dim);
+	printf("Evaluation:\n");
+	printf("===========\n");
+
+	double avg_time = 0;
+	/* compute an average value of the time needed to run the program */
+	for(int i=0; i<NUM_ROUNDS; i++) {
+		max_sub_arr(mat, ps, outmat, dim);
+		/* runtime of the algorithm is modified by the algorithm itself */
+		avg_time += runtime;
+	}
+
+	avg_time /= NUM_ROUNDS;
+
+	/* print stats */
+	printf("[STAT] Runtime=%f sec\n\n", avg_time);
 
     /* release resources */
     fclose(input_file);
-	printf("[DEBUG] freeing mat\n");
 	free_matrix(mat, dim); 
-	printf("[DEBUG] freeing ps\n");
 	free_matrix(ps, dim); 
 
     return EXIT_SUCCESS;

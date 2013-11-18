@@ -5,8 +5,8 @@
 #include <omp.h>
 
 //#define _PRINT_INFO 
-#define		NUM_ROUNDS		20
-#define 	MAX_THREADS		48
+#define		NUM_ROUNDS		10
+#define 	MAX_THREADS		8
 
 static int thread_nr = 8;
 static double runtime = 0;
@@ -26,51 +26,14 @@ usage(const char* app_name)
     exit(0);
 }
 
-/* FIXME - do we need parallelism here? is equally fast */
 void 
 clear(
 	int* a, 
 	int len) 
 {
-#if STOP_TIME
-//	double start, time;
-//	start = omp_get_wtime();
-#endif /* STOP_TIME */
-
-	/* precompute vertical prefix sum */
-
-#if OMP
-	/* TODO - does not make sense to parallelize??? */
-/*
-	#pragma omp parallel for \
-		if(len > 512) \
-		schedule(static) \
-//		num_threads(4)
-*/
-#endif
-#if 0
-    for (int index=0; index<len; index+=4) {
-		/* use loop unrolling */
-		int i,j,k,l;
-		
-		i=index;
-		j=index+1;
-		k=index+2;
-		l=index+3;
-		
-		a[i] = 0;
-		a[j] = 0;
-		a[k] = 0;
-		a[l] = 0;
-	}
-#endif
-memset((void*)a, 0, len); 
-
-#if STOP_TIME
-//	time = omp_get_wtime() - start;
-//	printf("[TIME] - clear(): time needed %f sec\n", time); 
-#endif /* STOP_TIME */
+	memset((void*)a, 0, len); 
 }
+
 
 int** 
 alloc_matrix(
@@ -161,7 +124,7 @@ precomp_matrix(
 	int **ps, 
 	int dim) 
 {
-#if STOP_TIME
+#ifdef STOP_TIME
 	double start, time;
 	start = omp_get_wtime();
 #endif /* STOP_TIME */
@@ -180,7 +143,7 @@ precomp_matrix(
         }
     }
 
-#if STOP_TIME
+#ifdef STOP_TIME
 	time = omp_get_wtime() - start;
 	printf("[TIME] - precomp_matrix(): time needed %f sec\n", time); 
 #endif /* STOP_TIME */
@@ -305,8 +268,7 @@ max_sub_arr(
     alg_end = get_usecs();
 	runtime = (double)(alg_end-alg_start)/1000000;
 
-#if RESULT
-    /* print output matrix */
+#if _PRINT_INFO
     printf("[RESULT] Threads=%d sub-matrix [%dX%d] in %f sec\n", 
 			thread_nr, outmat_row_dim, outmat_col_dim, runtime);
 	printf(" -> max sum=%d, left=%d, top=%d right=%d, bottom=%d\n", 
@@ -314,11 +276,11 @@ max_sub_arr(
 #endif
 
 #ifdef _PRINT_INFO
+    /* print output matrix */
 	printf("[INFO] output matrix: \n");
 	print_matrix(outmat, outmat_row_dim, outmat_col_dim); 
 #endif
 
-//	printf("[DEBUG] freeing outmat\n");
 	free_matrix(outmat, outmat_row_dim); 
 }
 
@@ -359,7 +321,7 @@ main(int argc, char* argv[])
 	printf("===========\n");
 	
 	/* evaluate the program using multiple number of threads/cores */
-	for(int i=1; i<=MAX_THREADS; i++) {
+	for(int i=1; i<=MAX_THREADS; i*=2) {
 		thread_nr = i;
 		double avg_time = 0;
 
@@ -373,14 +335,30 @@ main(int argc, char* argv[])
 		avg_time /= NUM_ROUNDS;
     
 		/* print stats */
-    	printf("[STAT] Threads=%d: runtime=%f sec\n\n", thread_nr, avg_time);
+    	printf("[STAT] Threads=%d: runtime=%f sec\n", thread_nr, avg_time);
 	}
+
+	/* last iteration */
+	thread_nr = MAX_THREADS;
+	double avg_time = 0;
+	/* compute an average value of the time needed to run the program */
+	for(int j=0; j<NUM_ROUNDS; j++) {
+		max_sub_arr(mat, ps, outmat, dim);
+		/* runtime of the algorithm is modified by the algorithm itself */
+		avg_time += runtime; 
+	}
+
+	avg_time /= NUM_ROUNDS;
+    
+	/* print stats */
+    printf("[STAT] Threads=%d: runtime=%f sec\n", thread_nr, avg_time);
+
+
+
 
     /* release resources */
     fclose(input_file);
-//	printf("[DEBUG] freeing mat\n");
 	free_matrix(mat, dim); 
-//	printf("[DEBUG] freeing ps\n");
 	free_matrix(ps, dim); 
 
     return EXIT_SUCCESS;
