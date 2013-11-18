@@ -114,17 +114,69 @@ int n)
 	}
 }
 
-void 
-precomp_matrix(
-int **mat, 
-int **ps, 
-int dim) 
+typedef struct precomp_ta
 {
-	/* precompute vertical prefix sum */
-	for(int j=0; j<dim; j++) {
+	int threadId;
+	int start;
+	int end;
+	int dim;
+	int** mat;
+	int** ps;
+} precomp_thread_args;
+
+void* precomp_pthread_func(void* args)
+{
+	precomp_thread_args targs = *(precomp_thread_args*)args;
+	int** mat = targs.mat;
+	int** ps = targs.ps;
+	int dim = targs.dim;
+	int start = targs.start;
+	int end = targs.end;
+	
+	for(int j=start;j<end;j++)
+	{
 		ps[0][j] = mat[0][j];
 		for (int i=1; i<dim; i++) {
 			ps[i][j] = ps[i-1][j] + mat[i][j];
+		}
+	}
+}
+
+void precomp_matrix(int **mat, int **ps, int dim, int num_threads) 
+{	
+	int iterations = dim;
+	int n=0;
+	int step = iterations / num_threads + 1;
+	pthread_t threads[num_threads];
+	precomp_thread_args thread_args[num_threads];
+	
+	for(int i=0;i<iterations;i+=step,n++)
+	{
+		thread_args[n].threadId = n;
+		thread_args[n].dim = dim;
+		thread_args[n].start = i;
+		thread_args[n].end = i + step > iterations ? iterations : i + step;
+		thread_args[n].ps = ps;
+		thread_args[n].mat = mat;
+
+#ifdef _PRINT_INFO
+		printf("[INFO] Create thread number %d with start %d and end %d\n", thread_args[n].threadId, thread_args[n].start, thread_args[n].end);
+#endif		
+		int error = pthread_create (&threads[n], 0, precomp_pthread_func, (void *)&thread_args[n]);
+		if(error)
+		{
+			printf("[ERROR %d] Couldn't create thread with threadId=%d,dimension=%d,start=%d,end=%d\n",error,thread_args[n].threadId,thread_args[n].dim,thread_args[n].start,thread_args[n].end);
+			exit(EXIT_FAILURE);
+		}
+	}
+	
+	for(int i=0;i<n;i++)
+	{
+		int error = pthread_join(threads[i],0);		
+		if(error)
+		{
+			printf("[ERROR %d] Couldn't join thread with threadId=%d\n",error,i);
+			exit(EXIT_FAILURE);
 		}
 	}
 }
@@ -332,7 +384,7 @@ main(int argc, char* argv[])
 	print_matrix(mat, dim, dim); 
 #endif
 
-	precomp_matrix(mat, ps, dim);
+	precomp_matrix(mat, ps, dim, argc > 2 ? atoi(argv[2]) : 48);
 
 #ifdef _PRINT_INFO
 	/* Print the matrix */
