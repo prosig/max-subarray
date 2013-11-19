@@ -4,8 +4,10 @@
 #include <string.h>
 
 //#define _PRINT_INFO
-//#define 	OPTIMIZE		1
-#define     NUM_ROUNDS      20
+#define OPTIMIZE		1
+#define	PRINT_RESULT		1
+
+#define NUM_ROUNDS      1
 
 static double runtime = 0;
 
@@ -244,7 +246,7 @@ max_sub_arr(
     alg_end = get_usecs();
 	runtime = (double)(alg_end-alg_start)/1000000;
 
-#ifdef _PRINT_INFO
+#ifdef PRINT_RESULT
 	/* prints the usual result */
 	printf("[RESULT] Sub-matrix [%dX%d] in %f sec\n",
 			outmat_row_dim, outmat_col_dim, runtime);
