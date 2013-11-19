@@ -4,12 +4,24 @@
 #include <string.h>
 #include <omp.h>
 
-//#define _PRINT_INFO 
-#define		NUM_ROUNDS		10
-#define 	MAX_THREADS		8
+//#define	_PRINT_INFO 
+//#define PRINT_RESULT		1
+//#define STOP_TIME			1
+
+#define	NUM_ROUNDS			10
+#define	MAX_THREADS			48
 
 static int thread_nr = 8;
 static double runtime = 0;
+
+typedef struct tr
+{                
+	int max_sum; 
+	int left;    
+	int right;   
+	int top;     
+	int bottom;  
+} thread_ret;    
 
 long 
 get_usecs(void)
@@ -130,12 +142,13 @@ precomp_matrix(
 #endif /* STOP_TIME */
 
 	/* precompute vertical prefix sum */
-#if OMP
 	#pragma omp parallel for \
+		default(none) \
+		firstprivate(dim) \
+		shared(ps, mat) \
 		if(dim > 8) \
 		schedule(static) \
 		num_threads(thread_nr)
-#endif
 	for(int j=0; j<dim; j++) {
         ps[0][j] = mat[0][j];
         for (int i=1; i<dim; i++) {
@@ -176,24 +189,33 @@ max_sub_arr(
 	print_matrix(ps, dim, dim); 
 #endif
 
+	thread_ret tr[thread_nr];
+	memset((void*)tr, 0, sizeof(thread_ret) * thread_nr);
+	/*
+	for(int t=0; t<thread_nr; t++) {
+		tr[t].max_sum = 0;
+	}
+	*/
+
     for(int i=0; i<dim; i++) {
-#if OMP
 		#pragma omp parallel for \
+			default(none) \
 			schedule(static) \
+			firstprivate(dim, i) \
 			private(sum, pos, local_max) \
-			shared(max_sum, top, bottom, left, right) \
+			shared(ps, tr) \
 			num_threads(thread_nr)
-#endif
+/*			firstprivate(dim, i) \
+			private(sum, pos, local_max) \
+			shared(max_sum, top, bottom, left, right, ps) \
+*/
 		for(int k=i; k<dim; k++) {
+			int tid = omp_get_thread_num();
+
             /* Kandane over all columns with the i..k rows */
             clear(sum, dim);
             clear(pos, dim);
             local_max = 0;
-
-#if STOP_TIME
-//	double start, time;
-//	start = omp_get_wtime();
-#endif /* STOP_TIME */
 
 			/* we keep track of the position of the max value over each 
 			 * Kandane's execution 
@@ -213,12 +235,21 @@ max_sub_arr(
                     local_max = j;
                 }
             } /* Kandane ends here */
-	
-#if STOP_TIME
-//	time = omp_get_wtime() - start;
-//	printf("[TIME] - kandane(): time needed %f sec\n", time); 
-#endif /* STOP_TIME */
 
+			if(sum[local_max] > tr[tid].max_sum) {
+                /* sum[local_max] is the new max value
+                 * the corresponding submatrix goes from rows i..k.
+                 * and from columns pos[local_max]..local_max */
+                tr[tid].max_sum = sum[local_max];
+                tr[tid].top = i;
+                tr[tid].left = pos[local_max];
+                tr[tid].bottom = k;
+                tr[tid].right = local_max;
+			}
+
+
+/* WARNING: old implementation: DO NOT DELETE */
+#if 0
 			/* use flush because it is faster than critical - this way
 			 * the critical section will be accessed less often */
 			#pragma omp flush (max_sum)
@@ -235,16 +266,28 @@ max_sub_arr(
                 	right = local_max;
 				}
             }
-        }
+#endif
+		}
+
+		/* executed sequentially */
+		for(int t=0; t<thread_nr; t++) {
+			if(tr[t].max_sum > max_sum) {
+               	max_sum = tr[t].max_sum;
+                top = tr[t].top;
+                left = tr[t].left;
+				bottom = tr[t].bottom;
+                right = tr[t].right;
+			}
+		}
     }
 
 	int outmat_row_dim = bottom - top + 1;
     int outmat_col_dim = right - left + 1;
 	outmat = alloc_matrix(outmat_row_dim, outmat_col_dim);
 
-#if STOP_TIME
-//	double start, time;
-//	start = omp_get_wtime();
+#ifdef STOP_TIME
+	double start, time;
+	start = omp_get_wtime();
 #endif /* STOP_TIME */
 
     /* TODO - Question: Do we need to compute the output matrix? */
@@ -260,15 +303,15 @@ max_sub_arr(
 				sizeof(**mat)*(right-left+1));
 	}
 
-#if STOP_TIME
-//	time = omp_get_wtime() - start;
-//	printf("[TIME] - outmat(): time needed %f sec\n", time); 
+#ifdef STOP_TIME
+	time = omp_get_wtime() - start;
+	printf("[TIME] - outmat(): time needed %f sec\n", time); 
 #endif /* STOP_TIME */
 
     alg_end = get_usecs();
 	runtime = (double)(alg_end-alg_start)/1000000;
 
-#if _PRINT_INFO
+#ifdef PRINT_RESULT
     printf("[RESULT] Threads=%d sub-matrix [%dX%d] in %f sec\n", 
 			thread_nr, outmat_row_dim, outmat_col_dim, runtime);
 	printf(" -> max sum=%d, left=%d, top=%d right=%d, bottom=%d\n", 
