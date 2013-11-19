@@ -138,13 +138,15 @@ void* precomp_pthread_func(void* args)
 			ps[i][j] = ps[i-1][j] + mat[i][j];
 		}
 	}
+	return 0;
 }
 
 void precomp_matrix(int **mat, int **ps, int dim, int num_threads) 
 {	
 	int iterations = dim;
 	int n=0;
-	int step = iterations / num_threads + 1;
+	int step = iterations / num_threads;
+	int over = iterations % num_threads;
 	pthread_t threads[num_threads];
 	precomp_thread_args thread_args[num_threads];
 	
@@ -153,6 +155,7 @@ void precomp_matrix(int **mat, int **ps, int dim, int num_threads)
 		thread_args[n].threadId = n;
 		thread_args[n].dim = dim;
 		thread_args[n].start = i;
+		if(over-->0) i++;
 		thread_args[n].end = i + step > iterations ? iterations : i + step;
 		thread_args[n].ps = ps;
 		thread_args[n].mat = mat;
@@ -166,7 +169,7 @@ void precomp_matrix(int **mat, int **ps, int dim, int num_threads)
 			printf("[ERROR %d] Couldn't create thread with threadId=%d,dimension=%d,start=%d,end=%d\n",error,thread_args[n].threadId,thread_args[n].dim,thread_args[n].start,thread_args[n].end);
 			exit(EXIT_FAILURE);
 		}
-	}
+	}	
 	
 	for(int i=0;i<n;i++)
 	{
@@ -381,8 +384,17 @@ main(int argc, char* argv[])
 	printf("[INFO] Input matrix [%d]\n", dim);
 	print_matrix(mat, dim, dim); 
 #endif
+	long alg_start, alg_end;
+	thread_ret result;
+for(int i=1;i<=48;i*=2)
+{
+	double total = 0.0;
+	for(int j=0;j<3;j++)
+	{
 
-	precomp_matrix(mat, ps, dim, argc > 2 ? atoi(argv[2]) : 48);
+
+	alg_start = get_usecs();
+	precomp_matrix(mat, ps, dim, i);
 
 #ifdef _PRINT_INFO
 	/* Print the matrix */
@@ -390,13 +402,34 @@ main(int argc, char* argv[])
 	print_matrix(ps, dim, dim); 
 #endif
 
-	long alg_start, alg_end;
-	thread_ret result;
+
+	result = maxArray_pthread(ps, mat, dim, i);
+	alg_end = get_usecs();
+	total += ((double)(alg_end-alg_start))/1000000;
+	}
+	printf("%f\n",total/3);
+}
+
+	double total = 0.0;
+	for(int j=0;j<3;j++)
+	{
+
 	
 	alg_start = get_usecs();
-	result = maxArray_pthread(ps, mat, dim, argc > 2 ? atoi(argv[2]) : 48);
+precomp_matrix(mat, ps, dim, 48);
+
+#ifdef _PRINT_INFO
+	/* Print the matrix */
+	printf("[INFO] Vertical prefix sum matrix [%d]\n", dim);
+	print_matrix(ps, dim, dim); 
+#endif
+
+
+	result = maxArray_pthread(ps, mat, dim, 48);
 	alg_end = get_usecs();
-	
+	total += ((double)(alg_end-alg_start))/1000000;
+	}
+	printf("%f\n",total/3);
 	/* FIXME - Question: Do we need to compute the output matrix? */
 	/* Compose the output matrix */
 
@@ -404,10 +437,12 @@ main(int argc, char* argv[])
 	int outmat_col_dim = result.right - result.left + 1;
 	outmat = alloc_matrix(outmat_row_dim, outmat_col_dim);
 
-	for(int i=result.top, k=0; i<=result.bottom; i++, k++) {
-		for(int j=result.left, l=0; j<=result.right; j++, l++) {
-			outmat[k][l] = mat[i][j];
-		}
+	
+    	for(int i=result.top, k=0; i<=result.bottom; i++, k++) {
+		int j=result.left;
+
+		memcpy((void*) outmat[k], (void*)(&mat[i][j]), 
+				sizeof(**mat)*(result.right-result.left+1));
 	}
 	
 	/* print output matrix */
