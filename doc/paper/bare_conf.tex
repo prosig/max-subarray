@@ -481,9 +481,9 @@ Before we begin the discussion about the used implementation techniques (section
 \subsection{Initial Program Modifications}
 \label{sec:impl:modifications}
 
-After studying the initial reference implementation, we decomposed this implementation into multiple functions, which we could better analyse using profilers, such as valgrind\cite{VALGRIND}. 
+After studying the initial reference implementation, we decomposed this implementation into multiple functions, which we could better analyse using profilers, such as valgrind\cite{VALGRIND}. In total, three different code optimizations have been performed before parallelization techniques were applied to the initial implementation.  
 
-First, after analysing the profiler results, it turned out that the function \texttt{clear()} is used very often in comparison to the most of the other functions within the implementation. According to valgrind (figure \ref{pic:clear}), in the initial implementation \texttt{clear()} is called over 250.000 times with an input matrix dimension of 500x500. Thus, it requires about 22.31\% of the total execution time to perform the \texttt{clear()} operations.  
+First, after analysing the profiler results, it turned out that the function \texttt{clear()} is used very often in comparison to the most of the other functions within the implementation. According to valgrind (figure \ref{pic:clear}), in the initial implementation \texttt{clear()} is called over 250.000 times with an input matrix dimension of 500x500. Thus, it requires about 22.31\% of the total execution time to perform the \texttt{clear()} operations (figure \ref{pic:clear} a).  
 
 \begin{figure}[h]
   \centering
@@ -493,31 +493,33 @@ First, after analysing the profiler results, it turned out that the function \te
   \label{pic:clear}
 \end{figure}
 
-It turned out that a simple \texttt{memset()} function was able to reduce the runtime of the \texttt{clear()} function to only 1.62\% of the total execution time of the program (figure \ref{pic:clear}).
+It turned out that a simple \texttt{memset()} function was able to reduce the runtime of the \texttt{clear()} function to only 1.62\% of the total execution time of the program (figure \ref{pic:clear} b).
 
-The same was discovered for the output matrix initialization (listing \ref{lst:outmat}). By simply using the function \texttt{memcpy()} 
+A similar performance improvement could be done for the output matrix initialization (listing \ref{lst:outmat}), respectively, by simply using the function \texttt{memcpy()} (listing \ref{lst:outmat-opt}). Thus, it was possible to make the code shown in listing \ref{lst:outmat} faster. But since this part of the code was executed only once, it did not contribute significantly to the total execution time. 
 
-   \begin{center}
-      \begin{lstlisting}[captionpos=b, caption=Initial Implementation: Initialize Output Matrix, label=lst:outmat]
+\begin{center}
+   \begin{lstlisting}[captionpos=b, caption=Initial Implementation: Initialize Output Matrix, label=lst:outmat]
 for(int i=top, k=0; i<=bottom; i++,k++) {     
     for(int j=left,l=0; j<=right; j++,l++) {
         outmat[k][l] = mat[i][j];              
     }                                          
 }                                              
-      \end{lstlisting}
-   \end{center}
+   \end{lstlisting}
+\end{center}
 
-   \begin{center}
-      \begin{lstlisting}[captionpos=b, caption=Optimized Implementation: Initialize Output Matrix, label=lst:outmat-opt]  
+\begin{center}
+   \begin{lstlisting}[captionpos=b, caption=Optimized Implementation: Initialize Output Matrix, label=lst:outmat-opt]  
 for(int i=top, k=0; i<=bottom; i++, k++) {                                       
     int j=left;                                   
                                                       
-        memcpy((void*) outmat[k], (void*)(&mat[i][j]),
+        memcpy((void*)outmat[k],(void*)(&mat[i][j]),
         sizeof(**mat)*(right-left+1));                                          
 }                                                 
-      \end{lstlisting}
-   \end{center}
+   \end{lstlisting}
+\end{center}
    
+The third code modification comprised heap memory allocation for the used matrices within the code. Since matrices on the stack are limited by the actual stack size, we decided to allocate enough memory on the heap with help of \texttt{malloc()}.
+
    
 \subsection{Explicit Threading - POSIX Threads}
 \label{sec:impl:pthread}
@@ -526,6 +528,8 @@ for(int i=top, k=0; i<=bottom; i++, k++) {
 
 \subsection{Implicit Threading - OpenMP}
 \label{sec:impl:openmp}
+
+In order to 
 
 
 \section{Analysis of Performance}
