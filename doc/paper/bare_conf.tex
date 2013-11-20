@@ -743,7 +743,7 @@ As already mentioned before, OpenMP implements an implicit multi-threading conce
   \label{pic:pthread_speedup_fixed-n}
 \end{figure}
 
-Figure \ref{pic:omp_efficiency_fixed-n} presents an interesting effect that the associated OpenMP implementation (this applies as well for the pthread implementation) shows an efficiency higher than one, while increasing the number of cores - especially when using high problem sizes. This can be the effect of caches and the resulting initial superlinear growth of speedup. Simultaneously, it shows that smaller problem sizes are executed inefficiently on a high number of cores, directly referring to Gustafson's law. Gustafson's law assumes that the amount of computational work grows with the number of parallel hardware, such as processors and cores. Hence processors can be used more efficient by simply increasing the problem size (figure \ref{pic:omp_eff_fixed-p}). 
+Figure \ref{pic:omp_efficiency_fixed-n} presents an interesting effect that the associated OpenMP implementation (this applies as well for the pthread implementation) shows an efficiency higher than one, while increasing the number of cores - especially when using high problem sizes. Apart from measurment errors, this can be the effect of caches and the resulting initial superlinear growth of speedup. Simultaneously, it shows that smaller problem sizes are executed inefficiently on a high number of cores, directly referring to Gustafson's law. Gustafson's law states that a program can be parallelized by increasing the problem size, assuming that the amount of computational work grows with the number of parallel hardware, such as processors and cores. Hence processors can be used more efficient by simply increasing the problem size (figure \ref{pic:omp_eff_fixed-p}). 
 
 \begin{figure}[h]
   \centering
@@ -770,7 +770,7 @@ In order to analyse scalability of the presented program, we analysed speedup an
    \item Intel Core i7-3635QM with 4 Cores and 8 Threads (associated with B)
 \end{itemize}
 
-Figure \ref{pic:omp_speedup_comp}, presents the speedup of all three architectures using a fixed problem size of N=1000 and scaling the number of cores until eight. It can be observed, that the program scales by increasing the number of parallel hardware in form of processors/cores. According to Amdahl's law, performance can be scaled up by adding additional processing units, assuming a fixed problem size. Hence, speedup is limited by the serial fraction of the program. However, in the figure \ref{pic:omp_speedup_comp}, we can observe a limit in speedup, which is based on the lack of parallel hardware of the associated machines A and B. Gothmog, on the other hand, of course does not present a speedup limit using only 8 cores - as could be seen in the previous section. 
+Figure \ref{pic:omp_speedup_comp}, presents the speedup of all three architectures using a fixed problem size of N=1000 and scaling the number of cores until eight. It can be observed, that the program scales by increasing the number of parallel hardware in form of processors/cores. According to Amdahl's law, performance can be scaled up by adding additional processing units, assuming a fixed problem size. Hence, speedup is theoretically limited only by the serial fraction of the program. However, in the figure \ref{pic:omp_speedup_comp}, we can observe a limit in speedup, which is based on the lack of parallel hardware of the associated machines A and B. Gothmog, on the other hand, of course does not present a speedup limit using only 8 cores - as could be seen in the previous section. 
 
 \begin{figure}[h]
   \centering
@@ -890,7 +890,7 @@ In figure \ref{pic:omp_speedup_comp2}, we can observe an increasing problem size
 
 To conclude our task, we have shown that both explicit and implicit multithreading concepts using the POSIX thread-library and OpenMP behave similarly. Both algorithms, presented in section \ref{sec:impl}, use the map pattern, in order to increase the degree of parallelization. The algorithms efficiently exploit parallel hardware by creating a number of threads, which independently perform a given task, based on assigned regions associated with the individual threads. 
 
-The significant difference between the two approaches refers to the implementation effort. Whereas for the explicit pthread approach the initial code had to be heavily modified, the OpenMP implementation included only a few lines of code, in order to make the program scale on a huge number of cores. Additionally, OpenMP - in contrast to the POSIX thread-library - does not have to modified, after deployment of other operating systems or libraries. This fundamental difference speaks for the portability of the OpenMP framework. 
+The significant difference between the two approaches refers mainly to the implementation effort. Whereas for the explicit pthread approach the initial code had to be heavily modified, the OpenMP implementation included only a few lines of code, in order to make the program scale on a huge number of cores. Additionally, OpenMP - in contrast to the POSIX thread-library - does not have to modified, after deployment of other operating systems or libraries. This fundamental difference speaks for the portability of the OpenMP framework. 
 
 
 % conference papers do not normally have an appendix
