@@ -386,7 +386,7 @@
 %
 % paper title
 % can use linebreaks \\ within to get better formatting as desired
-\title{IS2200 - Parallel Computer Systems \\{Lab1: Maximum sub-array problem}}
+\title{IS2200 - Parallel Computer Systems \\{Lab1: Maximum Sub-Array Problem}}
 
 
 % author names and affiliations
@@ -701,7 +701,7 @@ void max_sub_arr(int **mat, int **ps,
 \section{Performance Analysis}
 \label{sec:analysis}
 % FIXME GCC vs ICC!!!
-In this chapter, first we would like to introduce the reason for our compiler choice, namely gcc. Before starting gathering data, we compared the two compilers, namely gcc and icc, in terms of performance of the produced code. Therefore, we compiled the program, independent of its multithreading capabilities, with both compilers and measured the time of the compiled program, when performing a calculation with a 1000x1000 matrix. The table \ref{table:compiler} demonstrates the results for compiled program with and without initial optimizations: 
+In this chapter, first we would like to introduce the reason for our compiler choice, namely gcc. Before starting gathering data, we compared two compilers, namely gcc and icc, in terms of required time by the produced binary to solve a problem of a fixed size. Therefore, we compiled the sequential program with both compilers and measured the time of the produced binary, when performing a calculation with a problem size of $N=1000$. The table \ref{table:compiler} demonstrates time measurements of the sequencial program with and without initial optimizations, which are presented in \ref{sec:impl:modifications}. Although the icc compiler was able to produce more performant binaries of the not optimized code, we decided to use gcc as our default compiler because it was able to produce faster binaries based on the optimized program. 
 
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -720,7 +720,7 @@ optimizations & 2.804212s & 2.333114s & 2.921114s & 2.922511s \\
 \end{tabular}
 \end{table}
 
-Although the icc compiler was able to produce more performant binary based on the not optimized code, we decided to use gcc as our default compiler because it was able to produce faster binaries based on the optimized program. 
+
 
 The following sections will present a performance analysis of the two multithreaded implementations, presented within the section \ref{sec:impl}. 
 
@@ -885,7 +885,7 @@ In figure \ref{pic:omp_speedup_comp2}, we can observe an increasing problem size
 
 
 
-\section{Conclusion}
+\section{Conclusion} 
 \label{sec:conclusion}
 
 To conclude our task, we have shown that both explicit and implicit multithreading concepts using the POSIX thread-library and OpenMP behave similarly. Both algorithms, presented in section \ref{sec:impl}, use the map pattern, in order to increase the degree of parallelization. The algorithms efficiently exploit parallel hardware by creating a number of threads, which independently perform a given task, based on assigned regions associated with the individual threads. 
