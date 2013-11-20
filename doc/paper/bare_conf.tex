@@ -438,10 +438,11 @@ Email: sergejp@kth.se}}
 \maketitle
 
 
-\begin{abstract}
-%\boldmath
-The abstract goes here.
-\end{abstract}
+% \begin{abstract}
+% %\boldmath
+% The abstract goes here.
+% \end{abstract}
+
 % IEEEtran.cls defaults to using nonbold math in the Abstract.
 % This preserves the distinction between vectors and scalars. However,
 % if the conference you are submitting to favors bold math in the abstract,
@@ -468,9 +469,9 @@ The abstract goes here.
 
 \section{Introduction}
 % no \IEEEPARstart
-In the context of the labwork of the course Parallel Computer Systems, a reference of the maximum sum-array problem implementation had to be extended in such a way that it would be able to scale on a large number of cores. In this paper, we discuss two solutions, where one of the solutions implements an explicit threading model with help of POSIX threads and the second solution makes use of the programming framework OpenMP and hence implementing an implicit threading model. 
+In the context of the lab work of the course Parallel Computer Systems, a reference of the maximum sum-array problem implementation had to be extended in such a way that it would be able to scale on a large number of cores. In this paper, we discuss two solutions, where one of the solutions implements an explicit threading model with help of POSIX threads and the second solution makes use of the programming framework OpenMP and hence implementing an implicit threading model. 
 
-Section \ref{sec:impl} shortly introduces the initial modifications of the given reference implementation of the maximum sub-array problem and further discusses the implementation of both solutions using explicit threading and implicit threading techniques and their associated parallel patterns. Subsequently, section \ref{sec:analysis} presents performance analysis - in terms of speedup and efficiency - of the maximum sub-array problem using both imlementation solutions on different architectures. Finally, to conclude this paper, section \ref{sec:conclusion} rounds up the discussion by providing a short comparison between the used implementation techniques. 
+Section \ref{sec:impl} shortly introduces the initial modifications of the given reference implementation of the maximum sub-array problem and further discusses the implementation of both solutions using explicit threading and implicit threading techniques and their associated parallel patterns. Subsequently, section \ref{sec:analysis} presents performance analysis - in terms of speedup and efficiency - of the maximum sub-array problem using both implementation solutions on different architectures. Finally, to conclude this paper, section \ref{sec:conclusion} rounds up the discussion by providing a short comparison between the used implementation techniques. 
 
 \section{Implementation}
 \label{sec:impl}
@@ -522,8 +523,8 @@ The third code modification comprised heap memory allocation for the used matric
 \subsection{Explicit Multi-Threading - POSIX Threads}
 \label{sec:impl:pthread}
 
-For the explicit thread implementation we used the POSIX thread-library pthread, which provides basic multi-threading functionality. Several parts of the program were parallelized utilizing this library, requiring major additions to the code. We only used the library-methods \texttt{pthread\_create} and \texttt{pthread\_join}, since we avoided data sharing and thus the need to use Mutexes and Locks.
-The first beneficiary of that was the computation of the vertical prefix-sum of the input matrix. Not much changes were needed there, as this was just a straight-forward nested for-loop, whose inner part depended on data computed by the previous iteration, so only the outer loop could be parallelized efficiently. No data sharing is required here, as each computation requires only data previously computed by the same thread and the results are written to separate parts of the memory, so the iterations could be easily divided among all available threads using the method from listing \ref{lst:pthread_framework}, which led to each thread working on its individual range.
+For the explicit thread implementation we used the POSIX thread-library pthread, providing basic multi-threading functionality. Several parts of the program were parallelized, utilizing this library and hence requiring major additions to the initial code. We only used the library-methods \texttt{pthread\_create} and \texttt{pthread\_join}, since we avoided data sharing and thus the need to use mutexes and Locks.
+The first beneficiary of that was the computation of the vertical prefix-sum of the input matrix. Not much changes were needed there, as this was just a straight-forward nested for-loop, whose inner part depends on data computed by the previous iteration. This way, only the outer loop could be parallelized efficiently. No data sharing is required here, as each computation requires only data previously computed by the same thread and the results are written to separate parts of the memory, so the iterations could be easily divided among all available threads using the method from listing \ref{lst:pthread_framework}, which led to each thread working on its individual range.
 
 \begin{center}
    \begin{lstlisting}[captionpos=b, caption=pthread: Parallel Matrix Pre-Computation of the Vertical Sum (simplified) - the variables \texttt{start} and \texttt{end} are used to equally divide the work among all available threads and to specify where the work of a thread begins and ends., label=lst:pthread_precomp]
@@ -567,7 +568,7 @@ void* divide_and_reduce(int iterations, int num_threads, void*(*thread_func)(voi
    \end{lstlisting}
 \end{center}
 
-The parallelization of the main algorithm required more effort, as here the computation depended on the parameter pair $\forall i\in \left\lbrace 0,...,\mathit{dim}-1 \right\rbrace :\forall k\in \left\lbrace i,...,\mathit{dim}-1 \right\rbrace$, therefore the number of iterations equals $\sum^{\mathit{dim}}_{i=1}i=\frac{\mathit{dim}\cdot (1+\mathit{dim})}{2}$. The fact that the computation of the algorithm for each parameter-tuple can be carried out independently made it possible to divide the iterations equally among all threads, once again using the framework of listing \ref{lst:pthread_framework} - the result from each thread is stored and sequentially compared afterwards to get the final result. Efficient recomputation of the parameters by only using the iteration number was a main challenge here, which we did by precomputing the series $\mathit{iter\_i}_0=0, \mathit{iter\_i}_{i+1}=\mathit{iter\_i}_{i}+\mathit{dim}-i$, so the first parameter can be derived by choosing the greatest $i$ which satisfies $\mathit{iter\_i}_i\leq \mathit{iteration\_num}$. The second parameter then results in $k=i+\mathit{iteration\_num}-\mathit{iter\_i}_{i}$.
+The parallelization of the main algorithm required more effort, as here the computation depends on the parameter pair $\forall i\in \left\lbrace 0,...,\mathit{dim}-1 \right\rbrace :\forall k\in \left\lbrace i,...,\mathit{dim}-1 \right\rbrace$, therefore the number of iterations equals $\sum^{\mathit{dim}}_{i=1}i=\frac{\mathit{dim}\cdot (1+\mathit{dim})}{2}$. The fact that the computation of the algorithm for each parameter-tuple can be carried out independently made it possible to divide the iterations equally among all threads, once again using the framework of listing \ref{lst:pthread_framework} - the result from each thread is stored and sequentially compared afterwards to get the final result. Efficient recomputation of the parameters by only using the iteration number was a main challenge here, which we did by precomputing the series $\mathit{iter\_i}_0=0, \mathit{iter\_i}_{i+1}=\mathit{iter\_i}_{i}+\mathit{dim}-i$, so the first parameter can be derived by choosing the greatest $i$ which satisfies $\mathit{iter\_i}_i\leq \mathit{iteration\_num}$. The second parameter then results in $k=i+\mathit{iteration\_num}-\mathit{iter\_i}_{i}$.
 
 \begin{center}
    \begin{lstlisting}[captionpos=b, caption=pthread: Parallel Main Algorithm (simplified), label=lst:pthread_maincomp]
@@ -606,6 +607,8 @@ In order to make better use of the parallel hardware, we decided to use implicit
 
 First, we parallelized the the matrix precomputation of the vertical prefix sum, comprised of a double for loop, by simply adding an OpenMP compiler directive (listing \ref{lst:precomp}).
 
+The OpenMP compiler \texttt{parallel for} directive in listing \ref{lst:precomp} parallelizes the for loop by internally forking \texttt{thread\_nr} times and organizing the individual threads in such a way that they are able to work on individual ranges of the for loop. We have implemented the if(dim>8) directive, since according do measurements, it simply does not make sense to fork if you have only a small number of values to compute; False sharing might be as well a potential issue. 
+
 \begin{center}
    \begin{lstlisting}[captionpos=b, caption=OpenMP: Parallel Matrix Pre-Computation of the Vertical Sum, label=lst:precomp]                                            
 void precomp_matrix(int **mat, int **ps, int dim)                                  
@@ -628,13 +631,12 @@ void precomp_matrix(int **mat, int **ps, int dim)
    \end{lstlisting}
 \end{center}
 
-The OpenMP compiler \texttt{parallel for} directive in listing \ref{lst:precomp} parallelizes the for loop by internally forking \texttt{thread\_nr} times and organizing the individual threads in such a way that they are able to work on individual ranges of the for loop. We have implemented the if(dim>8) directive, since according do measurements, it simply does not make sence to fork if you have only a small number of values to compute; False sharing might be as well a potential issue. 
 
-We have explicitely stated all shared and private variables in order to follow the good practice of an OpenMP implementation. In this case, the stated shared and private variables do not make significant code improvements; however, they can result in a huge runtime improvement when dealing with cache coherence issues on multicore-processors resulting in false sharing. 
+We have explicitly stated all shared and private variables in order to follow the good practice of an OpenMP implementation. In this case, the stated shared and private variables do not make significant code improvements; however, they can result in a huge runtime improvement when dealing with cache coherence issues on multicore-processors resulting in false sharing. 
 
 The reason why we do not experience false sharing (or at least only at a small rate) is that the first for loop iterates through columns (not rows) and hence individual threads, potentially running on different cores, experience a bigger memory distance within the array \texttt{ps}. If we would parallelize the inner for loop, we would get into troubles, since the memory positions, accessed by different threads, would be too close to each other and eventually lead to false sharing. 
 
-The second and last code extension of the initial implementation affects the main algorithm (listing \ref{lst:alg1}). At this point, we considered two different solutions, whereas both of them scaled very well and performed almost similar. The first solution shared the variables \texttt{max\_sum}, \texttt{top}, \texttt{bottom}, \texttt{left}, and \texttt{right}. In order to synchronize the individual threads, we used a \texttt{critical} section (in this case it is not possible to use an \texttt{atomic} statement instead), whose performance impact was lindered by the \texttt{flush} statement, since this way the threads on individual cores were able to be informed about the most recent value of \texttt{max\_sum} and often skipped the critical section. 
+The second and last code extension of the initial implementation affects the main algorithm (listing \ref{lst:alg1}). 
 
 
 \begin{center}
@@ -667,7 +669,9 @@ void max_sub_arr(int **mat, int **ps,
    \end{lstlisting}
 \end{center}	
 
-As already mentioned, this implementation scaled and performed well but in the end, we implemented another solution, without \texttt{critical} and \texttt{flush} statements and hence increased performance a little bit more (listing \ref{lst:alg2}). Therefore, we used a similar approach as witihin the pthread implementation in section \ref{sec:impl:pthread}. Within the parallel for loop, we used local copies of the critical variables, stored within the struct tr, whose results were processed by the single master thread after the for loop and hence established consistency. 
+At this point, we considered two different solutions, whereas both of them scaled very well and performed almost similar. The first solution shared the variables \texttt{max\_sum}, \texttt{top}, \texttt{bottom}, \texttt{left}, and \texttt{right}. In order to synchronize the individual threads, we used a \texttt{critical} section (in this case it is not possible to use an \texttt{atomic} statement instead), whose performance impact was lindered by the \texttt{flush} statement, since this way the threads on individual cores were able to be informed about the most recent value of \texttt{max\_sum} and often skipped the critical section. 
+
+As already mentioned, this implementation scaled and performed well but in the end, we implemented another solution, without \texttt{critical} and \texttt{flush} statements and hence increased performance a little bit more (listing \ref{lst:alg2}). Therefore, we used a similar approach as within the pthread implementation in section \ref{sec:impl:pthread}. Within the parallel for loop, we used local copies of the critical variables, stored within the struct tr, whose results were processed by the single master thread after the for loop and hence established consistency. 
 
 
 \begin{center}
@@ -702,7 +706,7 @@ In this chapter, first we would like to introduce the reason for our compiler ch
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
 \renewcommand{\arraystretch}{1.3}
-\caption{Compiler Capabilities with a 1000x1000 Matrix}
+\caption{Compiler Capabilities using a 1000x1000 Matrix}
 \label{table:compiler}
 \centering
 \begin{tabular}{|c||c|c|c|c|}
@@ -723,7 +727,7 @@ The following sections will present a performance analysis of the two multithrea
 \subsection{Explicit vs Implicit Multi-Threading}
 \label{sec:analysis:pthread}
 
-As already mentioned before, OpenMP implements an implicit multi-threading concept, which internally uses the same threading methods, which are used by explicit methods. Because of this reason we expected the same speedup and efficiency behaviour of the two implementations, presented above. According to figure \ref{pic:omp_speedup_fixed-n} and \ref{pic:pthread_speedup_fixed-n}, our assumption was confirmed. Appart from smaller deviations, which may be based on measurement errors, both implementation present the same behaviour while increasing the number of cores for a fixed problem size. They as well present the same behaviour, while using a fixed number of cores, when the problem size increases. 
+As already mentioned before, OpenMP implements an implicit multi-threading concept, which internally uses the same threading methods, which are used by explicit methods. Because of this reason we expected the same speedup and efficiency behaviour of the two implementations, presented above. According to figure \ref{pic:omp_speedup_fixed-n} and \ref{pic:pthread_speedup_fixed-n}, our assumption was confirmed. Apart from smaller deviations, which may be based on measurement errors, both implementation present the same behaviour while increasing the number of cores for a fixed problem size. They as well present the same behaviour, while using a fixed number of cores, when the problem size increases. 
 
 \begin{figure}[h]
   \centering
@@ -759,28 +763,28 @@ Figure \ref{pic:omp_efficiency_fixed-n} presents an interesting effect that the 
 \subsection{Performance Analysis of Different Architectures}
 \label{sec:analysis:openmp}
 
-In order to analyse scalability of the presented program, we analysed speedup and efficiency of three different architectures, running both openmp and pthread implementation with fixed problem size of 1000. For our analysis, we used the following architectures and additionally assume a similar behaviour of the two implementations, presented in section \ref{sec:impl}:
+In order to analyse scalability of the presented program, we analysed speedup and efficiency of three different architectures, running both OpenMP and pthread implementation with fixed problem size of 1000. For our analysis, we use the following architectures and additionally assume a similar behaviour of the two implementations, presented in section \ref{sec:impl} (for simplicity reasons, we present only the OpenMP implementation results, as the pthread results behave similar):
 \begin{itemize}
    \item AMD Opteron 6172 processor with total 48 cores (Gothmog, associated with GB)
    \item Intel Core Duo T2600 with 2 Cores (associated with A)
    \item Intel Core i7-3635QM with 4 Cores and 8 Threads (associated with B)
 \end{itemize}
 
-According to figure \ref{pic:omp_speedup_comp}, the program scales by increasing the number of parallel hardware in form of processors/cores. According to Amdahl's law, performance can be scaled up by adding additional processing units, assuming a fixed problem size. Hence, speedup is limited by the serial fraction of the program. In the figure \ref{pic:omp_speedup_comp}, we can observe a limit in speedup, which is based on the lack of parallel hardware of the associated machines A and B. Gothmog, on the other hand, of course does not present a speedup limit using only 8 cores - as could be seen in the previous section. 
+Figure \ref{pic:omp_speedup_comp}, presents the speedup of all three architectures using a fixed problem size of N=1000 and scaling the number of cores until eight. It can be observed, that the program scales by increasing the number of parallel hardware in form of processors/cores. According to Amdahl's law, performance can be scaled up by adding additional processing units, assuming a fixed problem size. Hence, speedup is limited by the serial fraction of the program. However, in the figure \ref{pic:omp_speedup_comp}, we can observe a limit in speedup, which is based on the lack of parallel hardware of the associated machines A and B. Gothmog, on the other hand, of course does not present a speedup limit using only 8 cores - as could be seen in the previous section. 
 
 \begin{figure}[h]
   \centering
   \includegraphics[scale=0.55]{pic/omp_speedup_comp.png} 
-  \caption{Speedup Comparizon - Fixed N, Increasing P}
+  \caption{Speedup Comparison - Fixed N, Increasing P}
   \label{pic:omp_speedup_comp}
 \end{figure}
 
-Figure \ref{pic:omp_efficiency_comp}, presents the efficiency of the same three architectures. Because of a lack of parallel hardware, architecture A is not able to utilize all threads, which can be seen within the presented diagram and hence loosing speedup and efficiency. The other two architectures increase speedup although they are loosing performance. This can be explained from the perspective of Gustafson’s law, since performance can be increased by increasing the amount of computational work instead of the number of parallel hardware. This can be observed in figure \ref{pic:omp_speedup_comp2}. 
+Figure \ref{pic:omp_efficiency_comp}, presents the efficiency of the same three architectures. Because of a lack of parallel hardware, architecture A is not able to utilize all threads, which can be seen within the presented diagram and hence loosing speedup and efficiency. The other two architectures increase speedup although they are loosing performance. This can be explained with help of the perspective of Gustafson’s law, since performance can be increased by increasing the amount of computational work instead of the number of parallel hardware. This can be observed in figure \ref{pic:omp_speedup_comp2}. 
 
 \begin{figure}[h]
   \centering
   \includegraphics[scale=0.55]{pic/omp_efficiency_comp.png} 
-  \caption{Efficiency Comparizon - Fixed N, Increasing P}
+  \caption{Efficiency Comparison - Fixed N, Increasing P}
   \label{pic:omp_efficiency_comp}
 \end{figure}
 
@@ -789,7 +793,7 @@ In figure \ref{pic:omp_speedup_comp2}, we can observe an increasing problem size
 \begin{figure}[h]
   \centering
   \includegraphics[scale=0.55]{pic/omp_speedup2_comp.png} 
-  \caption{Speedup Comparizon - Increasing N, Fixed P}
+  \caption{Speedup Comparison - Increasing N, Fixed P}
   \label{pic:omp_speedup_comp2}
 \end{figure}
 
@@ -884,7 +888,9 @@ In figure \ref{pic:omp_speedup_comp2}, we can observe an increasing problem size
 \section{Conclusion}
 \label{sec:conclusion}
 
+To conclude our task, we have shown that both explicit and implicit multithreading concepts using the POSIX thread-library and OpenMP behave similarly. Both algorithms, presented in section \ref{sec:impl}, use the map pattern, in order to increase the degree of parallelization. The algorithms efficiently exploit parallel hardware by creating a number of threads, which independently perform a given task, based on assigned regions associated with the individual threads. 
 
+The significant difference between the two approaches refers to the implementation effort. Whereas for the explicit pthread approach the initial code had to be heavily modified, the OpenMP implementation included only a few lines of code, in order to make the program scale on a huge number of cores. Additionally, OpenMP - in contrast to the POSIX thread-library - does not have to modified, after deployment of other operating systems or libraries. This fundamental difference speaks for the portability of the OpenMP framework. 
 
 
 % conference papers do not normally have an appendix
