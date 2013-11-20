@@ -30,7 +30,7 @@ get_usecs(void)
 }
 
 /**
- *
+ * print usage
  */
 void
 usage(const char* app_name)
@@ -50,7 +50,9 @@ clear(
     memset((void*)a, 0, len*sizeof(int));
 }
 
-
+/**
+ * allocates matrix of size NxM
+ */
 int**
 alloc_matrix(
     int n,
@@ -76,6 +78,9 @@ alloc_matrix(
     return matrix;
 }
 
+/**
+ * free matrix
+ */
 void
 free_matrix(
     int** matrix,
@@ -97,6 +102,9 @@ free_matrix(
     free(matrix);
 }
 
+/**
+ * reads matrix dimension from file and returns it
+ */
 int
 get_mat_dim(FILE* input_file)
 {
@@ -107,6 +115,9 @@ get_mat_dim(FILE* input_file)
     return dim;
 }
 
+/**
+ * read matrix from input file
+ */
 void
 read_matrix(
     int **mat,
@@ -133,6 +144,9 @@ read_matrix(
     }
 }
 
+/**
+ * print matrix
+ */
 void
 print_matrix(
     int **matrix,
@@ -149,6 +163,9 @@ print_matrix(
     }
 }
 
+/**
+ * perform precomputation on the matrix bovore the kedan's algorithm
+ */
 void
 precomp_matrix(
     int **mat,
@@ -176,6 +193,9 @@ precomp_matrix(
 
 }
 
+/**
+ * computes the maximum sub-array problem
+ */
 void
 max_sub_arr(
     int **mat,
@@ -257,6 +277,7 @@ max_sub_arr(
         }
     }
 
+	/* sequential execution */
     for(int t=0; t<NUM_THREADS; t++)
     {
         if(tr[t].max_sum > max_sum)
