@@ -297,10 +297,7 @@ void* maxArray_pthread_func(void* tdata)
     for(int n=start; n<end; n++)
     {
         if(n >= next_i)
-        {
-            i++;
-            next_i = i<dim-1 ? iter_i[i+1] : end;
-        }
+            next_i = ++i<dim-1 ? iter_i[i+1] : end;
 
         int k = i + n - iter_i[i];
 
