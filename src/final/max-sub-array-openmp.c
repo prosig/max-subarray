@@ -6,6 +6,9 @@
 
 #define 	NUM_THREADS		48
 
+/**
+ * struct, used to store thread local information
+ */
 typedef struct tr
 {
     int max_sum;
@@ -15,6 +18,9 @@ typedef struct tr
     int bottom;
 } thread_ret;
 
+/**
+ * return curtime in usec
+ */
 long
 get_usecs(void)
 {
@@ -23,6 +29,9 @@ get_usecs(void)
     return t.tv_sec*1000000+t.tv_usec;
 }
 
+/**
+ *
+ */
 void
 usage(const char* app_name)
 {
@@ -30,12 +39,15 @@ usage(const char* app_name)
     exit(0);
 }
 
+/**
+ * clear a vector, matrix of
+ */
 void
 clear(
     int* a,
     int len)
 {
-    memset((void*)a, 0, len);
+    memset((void*)a, 0, len*sizeof(int));
 }
 
 
