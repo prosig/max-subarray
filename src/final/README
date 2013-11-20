@@ -23,9 +23,17 @@ Run Program:
 ============
 
 To run the program with an input file, including matrix dimension information
-as well as the matrix itself, run the following command (input files can be
-generated with the provided "inpgen.py" script within the input subfolder): 
+as well as the matrix itself, run the command according the the following usage
+(input files can be generated with the provided "inpgen.py" script within the
+input subfolder): 
 
 	$ Usage: ./max-sub-array-XXX <input_file 1> ... <input_file n>
+
+
+Additional Comments:
+====================
+
+* In order to meet given requirements on the program output, the code including
+  time testing was omitted. 
 
 
