@@ -147,20 +147,20 @@ precomp_matrix(
     /* precompute vertical prefix sum */
 
     #pragma omp parallel for \
-    default(none) \
-    firstprivate(dim) \
-    shared(ps, mat) \
-    if(dim > 8) \
+        default(none) \
+        firstprivate(dim) \
+        shared(ps, mat) \
+        if(dim > 8) \
         schedule(static) \
         num_threads(NUM_THREADS)
-        for(int j=0; j<dim; j++)
+    for(int j=0; j<dim; j++)
+    {
+        ps[0][j] = mat[0][j];
+        for (int i=1; i<dim; i++)
         {
-            ps[0][j] = mat[0][j];
-            for (int i=1; i<dim; i++)
-            {
-                ps[i][j] = ps[i-1][j] + mat[i][j];
-            }
+            ps[i][j] = ps[i-1][j] + mat[i][j];
         }
+    }
 
 }
 
@@ -193,12 +193,12 @@ max_sub_arr(
     for(int i=0; i<dim; i++)
     {
         #pragma omp parallel for \
-        default(none) \
-        schedule(static) \
-        firstprivate(dim, i) \
-        private(sum, pos, local_max) \
-        shared(ps, tr) \
-        num_threads(NUM_THREADS)
+            default(none) \
+            schedule(static) \
+            firstprivate(dim, i) \
+            private(sum, pos, local_max) \
+            shared(ps, tr) \
+            num_threads(NUM_THREADS)
         for(int k=i; k<dim; k++)
         {
             int tid = omp_get_thread_num();
