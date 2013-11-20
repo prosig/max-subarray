@@ -1,0 +1,31 @@
+Maximum Sub-Array Problem:
+==========================
+
+The provided code presents a modification of the given sequential program,
+which is based on the implementation from
+http://stackoverflow.com/questions/2643908/getting-the-submatrix-with-maximum-sum
+
+
+Compilation:
+============
+
+To compile all version of the code, simply run:
+
+	$ make
+
+which creates three files:
+	1) max-sub-array-sequential
+	2) max-sub-array-pthread
+	3) max-sub-array-openmp
+
+
+Run Program:
+============
+
+To run the program with an input file, including matrix dimension information
+as well as the matrix itself, run the following command (input files can be
+generated with the provided "inpgen.py" script within the input subfolder): 
+
+	$ Usage: ./max-sub-array-XXX <input_file 1> ... <input_file n>
+
+
