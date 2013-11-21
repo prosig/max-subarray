@@ -386,7 +386,7 @@
 %
 % paper title
 % can use linebreaks \\ within to get better formatting as desired
-\title{IS2200 - Parallel Computer Systems \\{Lab1: Maximum sub-array problem}}
+\title{IS2200 - Parallel Computer Systems \\{Lab1: Maximum Sub-Array Problem}}
 
 
 % author names and affiliations
@@ -697,7 +697,7 @@ void max_sub_arr(int **mat, int **ps,
 \section{Performance Analysis}
 \label{sec:analysis}
 % FIXME GCC vs ICC!!!
-In this chapter, first we would like to introduce the reason for our compiler choice, namely gcc. Before starting gathering data, we compared the two compilers, namely gcc and icc, in terms of performance of the produced code. Therefore, we compiled the program, independent of its multithreading capabilities, with both compilers and measured the time of the compiled program, when performing a calculation with a 1000x1000 matrix. The table \ref{table:compiler} demonstrates the results for compiled program with and without initial optimizations: 
+In this chapter, first we would like to introduce the reason for our compiler choice, namely gcc. Before starting gathering data, we compared two compilers, namely gcc and icc, in terms of required time by the produced binary to solve a problem of a fixed size. Therefore, we compiled the sequential program with both compilers and measured the time of the produced binary, when performing a calculation with a problem size of $N=1000$. The table \ref{table:compiler} demonstrates time measurements of the sequencial program with and without initial optimizations, which are presented in \ref{sec:impl:modifications}. Although the icc compiler was able to produce more performant binaries of the not optimized code, we decided to use gcc as our default compiler because it was able to produce faster binaries based on the optimized program. 
 
 \begin{table}[!t]
 % increase table row spacing, adjust to taste
@@ -716,7 +716,7 @@ optimizations & 2.804212s & 2.333114s & 2.921114s & 2.922511s \\
 \end{tabular}
 \end{table}
 
-Although the icc compiler was able to produce more performant binary based on the not optimized code, we decided to use gcc as our default compiler because it was able to produce faster binaries based on the optimized program. 
+
 
 The following sections will present a performance analysis of the two multithreaded implementations, presented within the section \ref{sec:impl}. 
 
@@ -739,7 +739,7 @@ As already mentioned before, OpenMP implements an implicit multi-threading conce
   \label{pic:pthread_speedup_fixed-n}
 \end{figure}
 
-Figure \ref{pic:omp_efficiency_fixed-n} presents an interesting effect that the associated OpenMP implementation (this applies as well for the pthread implementation) shows an efficiency higher than one, while increasing the number of cores - especially when using high problem sizes. This can be the effect of caches and the resulting initial superlinear growth of speedup. Simultaneously, it shows that smaller problem sizes are executed inefficiently on a high number of cores, directly referring to Gustafson's law. Gustafson's law assumes that the amount of computational work grows with the number of parallel hardware, such as processors and cores. Hence processors can be used more efficient by simply increasing the problem size (figure \ref{pic:omp_eff_fixed-p}). 
+Figure \ref{pic:omp_efficiency_fixed-n} presents an interesting effect that the associated OpenMP implementation (this applies as well for the pthread implementation) shows an efficiency higher than one, while increasing the number of cores - especially when using high problem sizes. Apart from measurment errors, this can be the effect of caches and the resulting initial superlinear growth of speedup. Simultaneously, it shows that smaller problem sizes are executed inefficiently on a high number of cores, directly referring to Gustafson's law. Gustafson's law states that a program can be parallelized by increasing the problem size, assuming that the amount of computational work grows with the number of parallel hardware, such as processors and cores. Hence processors can be used more efficient by simply increasing the problem size (figure \ref{pic:omp_eff_fixed-p}). 
 
 \begin{figure}[h]
   \centering
@@ -766,7 +766,8 @@ In order to analyse scalability of the presented program, we analysed speedup an
    \item Intel Core i7-3635QM with 4 Cores and 8 Threads (associated with B)
 \end{itemize}
 
-According to figure \ref{pic:omp_speedup_comp}, the program scales by increasing the number of parallel hardware in form of processors/cores. According to Amdahl's law, performance can be scaled up by adding additional processing units, assuming a fixed problem size. Hence, speedup is limited by the serial fraction of the program. In the figure \ref{pic:omp_speedup_comp}, we can observe a limit in speedup, which is based on the lack of parallel hardware of the associated machines A and B. Gothmog, on the other hand, of course does not present a speedup limit using only 8 cores - as could be seen in the previous section. 
+
+Figure \ref{pic:omp_speedup_comp}, presents the speedup of all three architectures using a fixed problem size of N=1000 and scaling the number of cores until eight. It can be observed, that the program scales by increasing the number of parallel hardware in form of processors/cores. According to Amdahl's law, performance can be scaled up by adding additional processing units, assuming a fixed problem size. Hence, speedup is theoretically limited only by the serial fraction of the program. However, in the figure \ref{pic:omp_speedup_comp}, we can observe a limit in speedup, which is based on the lack of parallel hardware of the associated machines A and B. Gothmog, on the other hand, of course does not present a speedup limit using only 8 cores - as could be seen in the previous section.
 
 \begin{figure}[h]
   \centering
@@ -881,10 +882,11 @@ In figure \ref{pic:omp_speedup_comp2}, we can observe an increasing problem size
 
 
 
-\section{Conclusion}
+\section{Conclusion} 
 \label{sec:conclusion}
 
 
+The significant difference between the two approaches refers mainly to the implementation effort. Whereas for the explicit pthread approach the initial code had to be heavily modified, the OpenMP implementation included only a few lines of code, in order to make the program scale on a huge number of cores. Additionally, OpenMP - in contrast to the POSIX thread-library - does not have to modified, after deployment of other operating systems or libraries. This fundamental difference speaks for the portability of the OpenMP framework. 
 
 
 % conference papers do not normally have an appendix

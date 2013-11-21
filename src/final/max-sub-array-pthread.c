@@ -27,7 +27,7 @@ clear(
     int* a,
     int len)
 {
-    memset((void*)a, 0, len);
+    memset((void*)a, 0, len*sizeof(int));
 }
 
 int**
