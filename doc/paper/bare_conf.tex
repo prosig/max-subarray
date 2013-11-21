@@ -543,26 +543,26 @@ void* precomp_thread_func(int start, int end, int **ps, int **mat, int dim)
 
 \begin{center}
    \begin{lstlisting}[captionpos=b, caption=pthread: Framework used for dividing iterations among a fixed number of threads and reducing the results afterwards, label=lst:pthread_framework]
-void* divide_and_reduce(int iterations, int num_threads, void*(*thread_func)(void*), void* data, void*(*reduce_func)(thread_arg*,int))
+void divide_and_reduce(int iterations, int num_threads, void*(*thread_func)(void*), void* data, void*(*reduce_func)(void*,void*), int result_element_size, void* result_out)
 {
-	int step = iterations / num_threads;
-	int over = iterations % num_threads;
-	...
-	for(int i=0; i<iterations; i+=step, n++)
-	{
-		...
-		thread_args[n].start = i;
-		if(over-->0) i++;
-		thread_args[n].end = i + step > iterations ? iterations : i + step;
-		int error = pthread_create(&threads[n],0,thread_func,(void*)&thread_args[n]);
-		...
-	}
-	for(int i=0; i<n; i++)
-	{
-		int error = pthread_join(threads[i],0);
-		...
-	}
-	return reduce_func(thread_args,n);
+    int step = iterations / num_threads;
+    int over = iterations % num_threads;
+    ...
+    for(int i=0; i<iterations; i+=step, n++)
+    {
+        ...
+        thread_args[n].start = i;
+        if(over-->0) i++;
+        thread_args[n].end = i + step > iterations ? iterations : i + step;
+        int error = pthread_create(&threads[n],0,thread_func,(void*)&thread_args[n]);
+        ...
+    }
+    for(int i=0; i<n; i++)
+    {
+        int error = pthread_join(threads[i],0);
+        ...
+    }
+    if(result_out) memcpy(result_out,recursive_reduce(reduce_func,(void*)results,0,n-1,result_element_size),result_element_size);
 }
    \end{lstlisting}
 \end{center}
